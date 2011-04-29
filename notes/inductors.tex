@@ -1,0 +1,702 @@
+\documentclass{article}
+
+\title{Inductors}
+\author{Robert Atkey}
+
+\usepackage[usenames]{color}
+\definecolor{citationcolour}{rgb}{0,0.4,0.2}
+\definecolor{linkcolour}{rgb}{0,0,0.8}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,
+            urlcolor=linkcolour,
+            linkcolor=linkcolour,
+            citecolor=citationcolour,
+            pdftitle=Inductors,
+            pdfauthor={Robert Atkey}}
+
+\usepackage{stmaryrd}
+%\usepackage{mathpartir}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage[all]{xy}
+\usepackage{todonotes}
+
+\newtheorem{definition}{Definition}
+\newtheorem{lemma}{Lemma}
+\newtheorem{theorem}{Theorem}
+\newtheorem{corollary}{Corollary}
+
+\newcommand{\Set}{\mathsf{Set}}
+\newcommand{\Cont}{\mathsf{Cont}}
+\newcommand{\Rel}{\mathsf{Rel}}
+\newcommand{\Fam}{\mathsf{Fam}}
+\newcommand{\inn}{\mathit{in}}
+\newcommand{\id}{\mathit{id}}
+\newcommand{\op}{\mathsf{op}}
+
+\newcommand{\cons}[1]{\mathit{#1}}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\section{Introduction}
+
+Inductors are meant to capture induction principles for sets. This
+consists of an underlying set, a functor which encodes how to
+construct an induction hypothesis from a predicate to proved, and a
+way to turn a proof of a predicate from the induction hypothesis to a
+proof of the predicate for all elements of the underlying set. One
+possible way to think of inductors is as a dependent version of
+recursion schemes from functional programming. So inductors can be
+thought of a way of writing total programs as well as a proof
+technique.
+
+FIXME: difference between this and presenting induction on
+well-founded orders.
+
+\section{Definition}
+
+\subsection{Basic Definition}
+
+This is the fully intensional definition. Explanation and motivation
+follow.
+
+\newcommand{\truth}{\mathsf{tr}}
+\newcommand{\ind}{\mathsf{ind}}
+\newcommand{\all}{\mathsf{all}}
+
+\begin{definition}
+  An inductor consists of
+  \begin{enumerate}
+  \item a set $A$, the carrier;
+  \item a set $B$, the sub-structure carrier;
+  \item a ``constructor'' $k : B \to A$;
+  \item a functor $H : (A \to \Set) \to (B \to \Set)$;
+  \item a function $\truth : \Pi b : B.\ H(\lambda a.\ 1)b$, that
+    witnesses half of truth-preservation;
+  \item a function
+    \begin{displaymath}
+      \ind : \Pi P : A \to Set.\ (\Pi b : B.\ H P b \to P (k b)) \to \Pi a : A.\ P a,
+    \end{displaymath}
+    that witnesses induction.
+  \end{enumerate}
+  such that the following equation holds:
+  \begin{equation}\label{eq:ind-compute}
+    \ind\ P\ h\ (k\ b) = h\ b\ (\all\ P\ b\ (\ind\ P\ h)) 
+  \end{equation}
+  where $\all : \Pi P : A \to \Set.\ \Pi b : B.\ (\Pi a : A.\ P\ a) \to H P b$ is defined
+  using $\truth$ and the action of $H$ on morphisms of $A \to \Set$:
+  \begin{displaymath}
+    \all\ P\ b\ p = H (\lambda a. \lambda *.\ p\ a) (\truth\ b)
+  \end{displaymath}
+\end{definition}
+
+Note that the $k : B \to A$ component of this definition is to be
+interpreted as a constructor, so that \autoref{eq:ind-compute} can be
+interpreted as a computation rule. At this time, this requirement is
+purely informal. A suggestion for formalising this requirement is to
+restrict to combinations of structure maps from initial algebras, and
+pairings thereof.
+
+I will generally write inductors as $\ind : (B \stackrel{k}\to A, H)$,
+leaving the $\truth$ component implicit.
+
+\subsection{Motivation}
+
+The motivation for this definition obviously comes from the
+Hermida-Jacobs categorical notion of structural induction principle.
+We have made the following generalisations:
+\begin{enumerate}
+\item away from being over some initial algebra $(\inn : F (\mu F) \to
+  \mu F)$ to some constructor-linked pair $k : B \to A$; and
+\item from the lifting $\hat{F}$ to some predicate transformer $H : (A
+  \to \Set) \to (B \to \Set)$ that need only support half of truth
+  preservation, and only has a \emph{weakly} initial algebra, with
+  carrier $K_1 A$.
+\end{enumerate}
+This definition drops all the extensional aspects of the categorical
+definition: the truth preservation condition is not required to be an
+isomorphism (which would ensure that there was a unique element of
+$H(\lambda a. 1)b$ for every $b$), and we do not require $\ind\ P\ h :
+\Pi a : A.\ P\ a$ to be the unique function that supports the equation
+above. The only reference to equality in the definition\footnote{Apart
+  from the references hidden within the requirement that $H$ be a
+  functor.} is to be interpreted as a computation rule.
+
+The motivation for dropping extensionality comes from two directions:
+to strengthen relevance to intensional type theory, and to distance
+ourselves from the study of induction via well-founded relations.
+
+The first motivation---intensional type theory---is partly based on
+relevance to implementation, and to explore the way that
+intensionality affects definitions lifted from category theory. As I
+understand it, the main thrust of intensionality in type theory is to
+emphasise the computational aspects. The equality rules of the
+calculus are to be read as computation rules that can be mechanically
+checked and not just as eternal truths that require external proof. So
+every construct in the system needs to have a computation rule to
+state how it reduces to normal form. This is reflected in
+\autoref{eq:ind-compute} above for the induction rule. For this to be
+interpreted as a computation rule, the component $k$ needs to be
+recognisable, hence the need for it to be (something like) a
+constructor.
+
+The second motivation---distance from well-founded-ness
+approaches---is based on the observation that, if one puts the
+requires for full extensionality back into the definition, then it is
+possible to show that there is a one-to-one correspondence between
+inductors and well-founded relations. This raises the question of
+whether studying inductors is just a more complicated way of studying
+well-founded relations. Inductors give a more natural definition for
+induction on inductive types, but don't seem to make other
+constructions any easier. A possible counter-argument is that
+inductors can be generalised to other fibrations, whereas well-founded
+relations are usually only defined on sets. But categorical treatments
+of predicate calculus that directly talk about relations (using
+regular categories) are very well developed, and while I don't know of
+any work that specifically handles well-founded relations, it seems to
+me that this would be an easier route to take for a general theory of
+induction by well-founded relations.
+
+\subsection{Some Immediate Consequences}
+
+One immediate consequence of the definition above is that for any
+inductor $\ind : (B \stackrel{k}\to A, H)$, the constructor $k : B \to
+A$ has a left-inverse $k^{-1} : A \to B$ given using the
+constantly-$B$ predicate:
+\begin{displaymath}
+  k^{-1}\ a = \ind\ (\lambda a.\ B)\ (\lambda b\ \phi.\ b)\ a
+\end{displaymath}
+By \autoref{eq:ind-compute}, it is immediate that $k^{-1} (k\ b) = b$,
+but we can not in general prove that $k (k^{-1} a) = a$. The function
+$f^{-1}$ effectively deconstructs an $A$ value into its $B$
+sub-structure.
+
+\section{Constructions}
+
+This section covers some constructions of inductors, going some way to
+developing a language of inductors.
+
+\subsection{Inductors from Inductive Types}
+
+The construction of inductors from inductive types is familar, so I'll
+skip it for now. For concreteness in the following sections, the
+inductor for the natural numbers is $\ind_{\mathbb{N}} : (1 +
+\mathbb{N} \stackrel{\inn}\to \mathbb{N}, H_{\mathbb{N}})$, where
+$H_{\mathbb{N}}$ is defined as follows (using the mnemonics
+$\cons{zero}$ and $\cons{succ}$ for the two constructors):
+\begin{eqnarray*}
+  H\ P\ \mathit{zero} & = & 1 \\
+  H\ P\ (\mathit{succ}\ n) & = & P n
+\end{eqnarray*}
+
+\subsection{Case Analysis Inductors}
+
+For any inductor $\ind : (A \stackrel{k}\to B, H)$, we can turn it
+into a case analysis inductor by replacing the $H$ component with the
+trivial predicate $H_1Pb = 1$. The resulting $\mathsf{CA}(\ind) : (A
+\stackrel{k}\to B, H_1)$ is an inductor, as can be checked:
+\begin{enumerate}
+\item Truth: $\mathsf{CA}(\truth)$ should have type $\Pi b : B.\ H_1(\lambda a.\
+  1)b$, which reduces to $\Pi b : B. 1$, so we can define $\mathsf{CA}(\truth)\ b
+  = *$.
+\item Induction: $\mathsf{CA}(\ind) : \Pi P : A \to \Set.\ (\Pi b : B. 1 \to P(k
+  b)) \to \Pi a : A. P a$, which we can define in terms of the
+  original induction function as:
+  \begin{displaymath}
+    \mathsf{CA}(\ind)\ P\ h\ a = \ind\ P\ (\lambda b\ \phi.\ h\ b\ *)\ a
+  \end{displaymath}
+  where we just ignore the $H P b$ argument that is passed in.
+\end{enumerate}
+It is easy to see that these definitions support
+\autoref{eq:ind-compute}.
+
+To see why this can be regarded as a case analysis principle, consider
+the inductor for the natural numbers above. Applying the case analysis
+combinator gives us the induction function:
+\begin{displaymath}
+  \mathsf{CA}(\ind_{\mathbb{N}}) : \Pi P : \mathbb{N} \to \Set.\ (\Pi b : 1 + \mathbb{N}.\ 1 \to P(\inn\ b)) \to \Pi n : \mathbb{N}.\ P\ n
+\end{displaymath}
+So a user of this principle does not get access to $P\ n$ for numbers
+below the current one, they only learn whether the supplied natural
+number was zero or successor of another natural number.
+
+\subsection{Lexicographic Pairing}
+
+Given a pair of inductors $\ind_1 : (B_1 \stackrel{k_1}\to A_1, H_1)$
+and $\ind_2 : (B_2 \stackrel{k_2}\to A_2, H_2)$, we can form their
+lexicographic product $\mathsf{Lex}(\ind_1, \ind_2) : (B_1 \times B_2
+\stackrel{k_1 \times k_2}\longrightarrow A_1 \times A_2,
+H_{\mathsf{Lex}})$, where $H_{\mathsf{Lex}}$ is defined as (where $P :
+A_1 \times A_2 \to \Set$):
+\begin{displaymath}
+  H_{\mathsf{Lex}}\ P\ (b_1, b_2) = H_1(\lambda a_1.\ \Pi a_2 : A_2.\ P(a_1, a_2))b_1 \times H_2(\lambda a_2.\ P(k_1 b_1, a_2))b_2
+\end{displaymath}
+so that $\mathsf{Lex}(\ind_1, \ind_2)$ must have type:
+\begin{displaymath}
+  \mathsf{Lex}(\ind_1, \ind_2) : 
+  \begin{array}[t]{l}
+    \Pi P : A_1 \times A_2 \to \Set. \\
+    (\Pi b : B_1 \times B_2.\
+    \begin{array}[t]{l}
+      H_1(\lambda a_1.\ \Pi a_2 : A_2.\ P(a_1, a_2))(\pi_1 b) \\
+      \times H_2(\lambda a_2.\ P(k_1(\pi_1 b), a_2))(\pi_2 b)
+    \end{array} \\
+    \quad\quad\quad\to P (k_1 (\pi_1 b), k_2 (\pi_2 b))) \to \\
+    \Pi a : A_1 \times A_2.\ P (a_1, a_2)
+  \end{array}
+\end{displaymath}
+The idea is that the user of the induction rule is given the choice at
+every point either to step down on the left-hand component and go to
+any element on the right-hand component, or leave the left-hand
+component as it is and step down the right hand component. This
+accords with the usual idea of lexicographical product of well-founded
+relations.
+
+The truth part of the lexicographic inductor is defined as:
+\begin{displaymath}
+  \mathsf{Lex}(\truth_1, \truth_2)\ (b_1, b_2) = (H_1(\lambda a_1\ a_2. *)(\truth_1\ b_1) , \truth_2\ b_2)
+\end{displaymath}
+The induction part is defined in terms of the induction parts of the
+component inductors, nesting one inside the other:
+\begin{displaymath}
+  \begin{array}[t]{l}
+    \mathsf{Lex}(\ind_1,\ind_2)\ P\ h\ (a_1,a_2) = \\
+    \quad \ind_1
+    \begin{array}[t]{l}
+      (\lambda a_1.\ \Pi a_2 : A_2.\ P(a_1,a_2)) \\
+      (\lambda b_1\ \phi_1\ a_2.\ \ind_2
+      \begin{array}[t]{l}
+        (\lambda a_2.\ P(k_1 b_1, a_2)) \\
+        (\lambda b_2\ \phi_2.\ h\ (b_1, b_2)\ (\phi_1, \phi_2)) \\
+        a_2)
+      \end{array} \\
+      a_1 \\
+      a_2
+    \end{array}
+  \end{array}
+\end{displaymath}
+
+Checking that this satisfies \autoref{eq:ind-compute} goes as
+follows. I have shortened $\mathsf{Lex}(\ind_1, \ind_2)$ to just
+$\mathsf{lex}$:
+\begin{eqnarray*}
+  & & \mathsf{lex}\ P\ h\ (k_1b_1,k_2b_2)
+  \\
+  &=&
+  \ind_1
+  \begin{array}[t]{l}
+    (\lambda a_1.\ \Pi a_2 : A_2.\ P(a_1,a_2)) \\
+    (\lambda b_1\ \phi_1\ a_2.\ \ind_2
+    \begin{array}[t]{l}
+      (\lambda a_2.\ P(k_1 b_1, a_2)) \\
+      (\lambda b_2\ \phi_2.\ h\ (b_1, b_2)\ (\phi_1, \phi_2)) \\
+      a_2)
+    \end{array} \\
+    (k_1 b_1)\ (k_2 b_2)
+  \end{array}
+  \\
+  &=&
+  \ind_2
+  \begin{array}[t]{l}
+    (\lambda a_2.\ P(k_1 b_1, a_2)) \\
+    (\lambda b_2\ \phi_2.\ \\
+    \quad h\ (b_1,b_2)\ (\all_1\ (\lambda a_1.\ \Pi a_2.\ P(a_1,a_2))\ b_1\ (\lambda a_1 a_2.\ \mathsf{lex}\ P\ h\ (a_1,a_2)), \phi_2)) \\
+    (k_2 b_2)
+  \end{array}
+  \\
+  &=&
+  h\ (b_1,b_2)\ (
+  \begin{array}[t]{l}
+    \all_1\ (\lambda a_1.\ \Pi a_2.\ P(a_1,a_2))\ b_1\ (\lambda a_1 a_2.\ \mathsf{lex}\ P\ h\ (a_1,a_2)), \\
+    \all_2\ (\lambda a_2.\ P(k_1 b_1, a_2))\ b_2\ (\ind_2\ (\lambda a_2. P(k_1 b_1, a_2))\ h^\dagger))
+  \end{array}
+\end{eqnarray*}
+where
+\begin{displaymath}
+  h^\dagger \equiv (\lambda b_2\ \phi_2.\ h\ (b_1,b_2)\ (\all_1\
+  (\lambda a_1.\ \Pi a_2.\ P(a_1,a_2))\ b_1\ (\lambda a_1 a_2.\
+  \mathsf{lex}\ P\ h\ (a_1,a_2)), \phi_2)).
+\end{displaymath}
+We need to check this against the derived definition of
+$\mathsf{Lex}(\all)$, which is:
+\begin{displaymath}
+  \mathsf{Lex}(\all)\ P\ (b_1,b_2)\ p = (
+  \begin{array}[t]{l}
+    \all_1\ (\lambda a_1.\ \Pi a_2.\ P(a_1,a_2))\ b_1\ (\lambda a_1 a_2. p\ (a_1,a_2)), \\
+    \all_2\ (\lambda a_2. P (k_1 b_1,b_2))\ b_2\ (\lambda a_2. p\ (k_1b_1,a_2)))
+  \end{array}
+\end{displaymath}
+Applying this when $p = \mathsf{lex}\ P\ h$ gives:
+\begin{eqnarray*}
+  & & (
+  \begin{array}[t]{l}
+    \all_1\ (\lambda a_1.\ \Pi a_2.\ P(a_1,a_2))\ b_1\ (\lambda a_1 a_2.\ \mathsf{lex}\ P\ h\ (a_1,a_2)), \\
+    \all_2\ (\lambda a_2. P (k_1 b_1,b_2))\ b_2\ (\lambda a_2.\ \mathsf{lex}\ P\ h\ (k_1b_1,a_2)))
+  \end{array}
+  \\
+  &=& (
+  \begin{array}[t]{l}
+    \all_1\ (\lambda a_1.\ \Pi a_2.\ P(a_1,a_2))\ b_1\ (\lambda a_1 a_2.\ \mathsf{lex}\ P\ h\ (a_1,a_2)), \\
+    \all_2\ (\lambda a_2. P (k_1 b_1,b_2))\ b_2\ (\lambda a_2.\ (\lambda a_2. P(k_1 b_1, a_2))\ h^\dagger))
+  \end{array}
+\end{eqnarray*}
+so the lexicographic inductor satisfies \autoref{eq:ind-compute}.
+
+\paragraph{A Question}\todo{Multiple computational rules?} 
+This proof actually shows that the lexicographic inductor actually
+satisfies more than the computation rule from
+\autoref{eq:ind-compute}. We only need to supply it with
+$(k_1b_1,a_2)$ for it to be able to do some computation. It may be the
+case that the $h$ that is supplied may be able to do useful work
+without touching the second component of the pair. I'm not sure
+whether it is a good idea to extend the definition of inductor to
+include the possibility of multiple computational rules that the
+induction function may support. Presumably, some way would be needed
+of ensuring that they are coherent.
+
+\paragraph{Another Question} Is the construction of lexicographic
+inductors associative? What would it mean for two inductors to be
+equal?
+
+\subsection{Pair Inductors}
+
+The lexicographic combination of inductors is asymmetric: it prefers
+its first component over its second one. Given a pair of inductors
+$\ind_1 : (B_1 \stackrel{k_1}\to A_1, H_1)$ and $\ind_2 : (B_2
+\stackrel{k_2}\to A_2, H_2)$, we can form their pair inductor
+$\mathsf{Pair}(\ind_1, \ind_2) : (B_1 \times B_2 \stackrel{k_1 \times
+  k_2}\longrightarrow A_1 \times A_2, H_{\mathsf{Pair}})$, where
+$H_{\mathsf{Pair}}$ is defined as (where $P : A_1 \times A_2 \to
+\Set$):
+\begin{displaymath}
+  H_{\mathsf{Pair}}\ P\ (b_1,b_2) = H_1(\lambda a_1.\ P(a_1,k_2b_2))b_1 \times H_2(\lambda a_2.\ P(k_1b_1,a_2))b_2
+\end{displaymath}
+so that $\mathsf{Pair}(\ind_1, \ind_2)$ must have type:
+\begin{displaymath}
+  \mathsf{Pair}(\ind_1, \ind_2) :
+  \begin{array}[t]{l}
+    \Pi P : A_1 \times A_2 \to \Set. \\
+        (\Pi b : B_1 \times B_2.\
+    \begin{array}[t]{l}
+      H_1(\lambda a_1.\ P(a_1, k_2(\pi_2 b)))(\pi_1 b) \\
+      \times H_2(\lambda a_2.\ P(k_1(\pi_1b), a_2))(\pi_2 b)
+    \end{array} \\
+    \quad\quad\quad\to P (k_1 (\pi_1 b), k_2 (\pi_2 b))) \to \\
+    \Pi a : A_1 \times A_2.\ P (a_1, a_2)
+  \end{array}
+\end{displaymath}
+The idea here is that the user of this induction principle can decide
+either to step down the left component, leaving the right hand
+component as it is, or step down the right component, leaving the left
+hand component as it is.
+
+The truth part of the lexicographic inductor is defined as:
+\begin{displaymath}
+  \mathsf{Pair}(\truth_1, \truth_2)\ (b_1, b_2) = (\truth_1\ b_1 , \truth_2\ b_2)
+\end{displaymath}
+which makes the derived $\all$ function be defined as:
+\begin{displaymath}
+  \mathsf{Pair}(\all)\ P\ (b_1,b_2)\ p = (
+  \begin{array}[t]{l}
+    \all_1\ (\lambda a_1.\ P(a_1,k_2b_2))\ b_1\ (\lambda a_1. p (a_1,k_2b_2)), \\
+    \all_2\ (\lambda a_2.\ P(k_1b_1,a_2))\ b_2\ (\lambda a_2. p (k_1b_1,a_2)))
+  \end{array}
+\end{displaymath}
+
+The induction part is defined in terms of the induction parts of the
+component inductors, nesting one inside the other, and using the
+action of $H_1$ on morphisms:
+\begin{displaymath}
+  \begin{array}[t]{l}
+    \mathsf{Pair}(\ind_1, \ind_2)\ P\ h\ (a_1,a_2) = \\
+    \quad \ind_1
+    \begin{array}[t]{l}
+      (\lambda a_1.\ \Pi a_2.\ P(a_1,a_2)) \\
+      (\lambda b_1\ \phi_1\ a_2.\ \ind_2
+      \begin{array}[t]{l}
+        (\lambda a_2. P(k_1b_1,a_2)) \\
+        (\lambda b_2 \phi_2.\ h\ (b_1,b_2)\ (H_1(\lambda a_1\ p.\ p\ (k_2b_2))\phi_1,\phi_2)) \\
+        a_2)
+      \end{array} \\
+      a_1\ a_2
+    \end{array}
+  \end{array}
+\end{displaymath}
+
+TODO: Proof
+
+%%% FIXME: this one doesn't seem to work: can I prove this? It is
+%%% similar to the statement that (x,y) < (x',y') iff x < x' or y < y'
+%%% isn't, in general, well-founded. I think there is an example in
+%%% the Transition Invariants paper.
+
+%%% FIXME: This means we could probably use classical well-founded
+%%% relations as a proof technique for proving the non-existence of
+%%% inductors.
+
+% \subsection{Pair Inductors}
+
+% The lexicographic combination of inductors is asymmetric: it prefers
+% its first component over its second one. Given a pair of inductors
+% $\ind_1 : (B_1 \stackrel{k_1}\to A_1, H_1)$ and $\ind_2 : (B_2
+% \stackrel{k_2}\to A_2, H_2)$, we can form their pair inductor
+% $\mathsf{Pair}(\ind_1, \ind_2) : (B_1 \times B_2 \stackrel{k_1 \times
+%   k_2}\longrightarrow A_1 \times A_2, H_{\mathsf{Pair}})$, where
+% $H_{\mathsf{Pair}}$ is defined as (where $P : A_1 \times A_2 \to
+% \Set$):
+% \begin{displaymath}
+%   H_{\mathsf{Pair}}\ P\ (b_1,b_2) = H_1(\lambda a_1.\ \Pi a_2.\ P(a_1,a_2))b_1 \times H_2(\lambda a_2.\ \Pi a_1.\ P(a_1,a_2))b_2
+% \end{displaymath}
+% so that $\mathsf{Pair}(\ind_1, \ind_2)$ must have type:
+% \begin{displaymath}
+%   \mathsf{Pair}(\ind_1, \ind_2) :
+%   \begin{array}[t]{l}
+%     \Pi P : A_1 \times A_2 \to \Set. \\
+%         (\Pi b : B_1 \times B_2.\
+%     \begin{array}[t]{l}
+%       H_1(\lambda a_1.\ \Pi a_2 : A_2.\ P(a_1, a_2))(\pi_1 b) \\
+%       \times H_2(\lambda a_2.\ \Pi a_1 : A_1.\ P(a_1, a_2))(\pi_2 b)
+%     \end{array} \\
+%     \quad\quad\quad\to P (k_1 (\pi_1 b), k_2 (\pi_2 b))) \to \\
+%     \Pi a : A_1 \times A_2.\ P (a_1, a_2)
+%   \end{array}
+% \end{displaymath}
+% The idea is that the user of this induction principle has the choice
+% of either stepping down the first component and visiting any position
+% of the second component, or dually, stepping down the second component
+% and visiting any element of the first component.
+
+% The truth part of the pair inductor is defined as:
+% \begin{displaymath}
+%   \mathsf{Pair}(\truth)\ (b_1,b_2) = (H_1(\lambda a_1a_2.\ *)(\truth_1\ b_1), H_2(\lambda a_2a_1.\ *)(\truth_2\ b_2))
+% \end{displaymath}
+% The induction part of the pair inductor is defined in terms of the
+% induction parts of the component inductors:
+
+
+
+\subsection{Stacking Inductors}
+
+\subsection{Comonadic Inductors}
+
+% \section{A Fibration}
+
+% \paragraph{$\Set$-continuations} Let $\Cont(\Set)$\footnote{So called
+%   because the objects look like continuations with $\Set$ as the
+%   result ``type''.} be a category where objects are pairs $(A, F)$ of
+% a set $A$ and a functor $F : (A \to \Set) \to \Set$, and morphisms
+% $(f, f^\dagger)$ between $(A,F)$ and $(B,G)$ consist of functions $f :
+% B \to A$ and natural transformations $f^\dagger : F P \to G
+% (P \circ f)$ (natural in $P : A \to \Set$).
+
+% The functor $U : \Cont(\Set) \to \Set^\op$ projects out the underlying
+% $\Set$/function from a $\Cont(\Set)$ object/morphism. The functor $U :
+% \Cont(\Set) \to \Set^\op$ is a fibration.
+
+% \paragraph{Composition Product} For any pair of $\Cont(\Set)$ objects
+% $(A, F)$ and $(B,G)$, define their \emph{composition product}:
+% \begin{displaymath}
+%   (A,F) \bullet (B,G) = (A \times B, \lambda P.\ F(\lambda a.\ G (\lambda b.\ P(a,b))))
+% \end{displaymath}
+% On morphisms $(f,f^\dagger) : (A,F) \to (A',F')$ and $(g,g^\dagger) :
+% (B,G) \to (B',G')$:
+% \begin{displaymath}
+%   (f,f^\dagger) \bullet (g, g^\dagger) = (f \times g, f^\dagger \bullet g^\dagger)
+% \end{displaymath}
+% where $f^\dagger \bullet g^\dagger$ is the composite generated by
+% composing $f^\dagger$ and $g^\dagger$ and using the functor action of
+% $F$:
+% \begin{displaymath}
+%   \xymatrix{
+%     {F (\lambda a.\ G(\lambda b.\ P (a,b)))} \ar[d]^{f^\dagger_{(\lambda a. G (\lambda b. P (a,b)))}}
+%     \\
+%     {F' (\lambda a'.\ G(\lambda b.\ P (f a', b)))}
+%     \ar[d]^{F' (\lambda a'. g^\dagger_{(\lambda b. P (f a', b))})}
+%     \\
+%     {F' (\lambda a'.\ G'(\lambda b'. P (f a', g b')))}
+%   }
+% \end{displaymath}
+% Due to the naturality of $f^\dagger$ and $g^\dagger$, the other
+% obvious option for definition of $f^\dagger \bullet g^\dagger$ is
+% equal to this one.
+
+% The object $I = (1, \lambda P.\ P *)$, where $1$ is the canonical
+% one-element set with $*$ as its element, acts as a unit for the
+% composition product. Since functor composition is associative, we have
+% a monoidal category $(\Cont(\Set), \bullet, I)$. Since it is
+% constructed using composition of functors, it is obviously not
+% symmetric.
+
+% \section{Definition}
+
+
+
+% \section{Definition}
+
+% Inductors are meant to capture induction principles for sets. This
+% consists of an underlying set, a functor which encodes how to
+% construct an induction hypothesis from a predicate to proved, and a
+% way to turn a proof of a predicate from the induction hypothesis to a
+% proof of the predicate for all elements of the underlying set. One
+% possible way to think of inductors is as a dependent version of
+% recursion schemes from functional programming. So inductors can be
+% thought of a way of writing total programs as well as a proof
+% technique.
+
+% Induction is usually presented in an abstract setting using
+% well-founded orderings, where a general proof rule for induction is
+% given for any well-founded order on a set. Inductors are more refined
+% in the sense that we differentiate between different induction
+% principles that may hold for any particular set + w.f.o,
+% e.g. single-step induction versus complete induction.
+
+% I'll first give the ``extensional'' definition of an inductor, which
+% relies on initiality. I think that this definition will be most
+% appropriate when operating in a purely category-theoretic setting
+% where we can rely on initiality properties. Afterwards, I'll give
+% another definition that may be more appropriate in a type-theoretic
+% setting were we only have weakly initial algebras.
+
+% The setting is the $\Fam(\Set) \to \Set$ fibration. It should be
+% possible to generalise to other fibrations in the future, but at the
+% cost of having to make all assumptions about strength explicit. Recall
+% that there is the truth functor $K_1 : \Set \to \Fam(\Set)$ with
+% $K_1(A) = (A, \lambda a. 1)$.
+
+% \subsection{Extensional Definition}
+
+% This definition may be more useful in a purely category-theoretic
+% stting.
+
+% \begin{definition}
+%   An \emph{inductor} for a set $A$ is a functor $H : \Set^A \to
+%   \Set^A$ and a morphism $k : H(K_1 A) \to K_1A$ such that the
+%   $H$-algebra $(K_1A, k)$ is initial.
+% \end{definition}
+
+% Some observations:
+% \begin{enumerate}
+% \item By Lambek's lemma, $k : H(K_1A) \cong K_1A$, which we could
+%   interpret as ``truth-preservation''.
+% \item Given a functor $F : \Set \to \Set$ which has an initial algebra
+%   $(\mu F, \inn)$ , then we can construct an inductor for $\mu F$ by
+%   setting $H = \Sigma_\inn \circ \hat{F}$.
+% \item For any set $A$, there is a trivial inductor given by $HP =
+%   K_1A$ and $k = \id$.
+% \end{enumerate}
+
+% \begin{definition}
+%   Given two inductors $(A_1, H_1)$ and $(A_2, H_2)$ a \emph{morphism}
+%   between them consists of a $\Set$ morphism $f : A_1 \to A_2$ and a
+%   natural transformation $\gamma : H_1 \circ f^* \Rightarrow f^* \circ
+%   H_2$.
+% \end{definition}
+
+% \subsection{Intensional Definition}
+
+% This definition may be more useful in a type-theoretic setting. It
+% includes a notion of ``single-step'' in the structure of the
+% underlying type.
+
+% \begin{definition}
+%   A \emph{inductor} for a set $A$ consists of:
+%   \begin{enumerate}
+%   \item a set $B$;
+%   \item a function $k : B \to A$;
+%   \item a functor $H : \Set^A \to \Set^B$;
+%   \item an isomorphism $t : H(K_1A) \to K_1B$;
+%   \end{enumerate}
+%   such that for any $P : \Set^A$ and $\Fam(\Set)$ arrow $j : HP \to P$
+%   over $k$, there is an $\Set^A$ arrow $h : K_1 A \to P$ such that $j
+%   \circ Hh = h \circ K_1k \circ t$.
+% \end{definition}
+
+% The diagram that we require to commute gives us a computation rule for
+% inductors. 
+
+% \begin{enumerate}
+% \item Given a functor $F : \Set \to \Set$ which has an initial algebra
+%   $(\mu F, \inn)$ , then we can construct an inductor for $\mu F$ by
+%   $B = F(\mu F)$, $k = \in$, $H = \hat{F}$ and $t$ being one half of
+%   the witness of truth-preservation for $\hat{F}$.
+% \item This definition also fits with the definition of induction in
+%   the \emph{Gentle Art of Levitation} paper (for the case of
+%   single-step induction on an inductive type).
+% \end{enumerate}
+
+% \begin{definition}
+%   A \emph{morphism} between two inductors $(A_1, B_1, k_1, H_1)$ and
+%   $(A_2, B_2, k_2, H_2)$ consists of:
+%   \begin{enumerate}
+%   \item a function $f_A : A_1 \to A_2$;
+%   \item a function $f_B : B_1 \to B_2$;
+%   \item such that $f_A \circ k_1 = k_2 \circ f_B$;
+%   \item and a natural transformation $\gamma : H_1 \circ f_A^* \Rightarrow f_B^* \circ H_2$.
+%   \end{enumerate}
+% \end{definition}
+
+% \subsection{Initial and Terminal Objects}
+
+% Based on Neil's email.
+
+% \paragraph{Terminal Objects} The candidate terminal object is $(\id :
+% 1 \to 1, \lambda P\ . K_1)$. Given another inductor $(k, H)$ define a
+% map $(f_A,f_B,\sigma) : (k,H) \to (\id_1, P \mapsto K_1)$ with the
+% unique map to $1$ for both $f_A$ and $f_B$. The natural transformation
+% has type (for $P : 1 \to \Set$):
+% \begin{displaymath}
+%   \sigma_P : \forall b.\ H (\lambda a. P *) b \to K_1 *
+% \end{displaymath}
+% which is just the unique map to the terminal object again. This is
+% clearly unique.
+
+% If the natural transformation had to go the other way round, then we
+% would have to construct:
+% \begin{displaymath}
+%   \sigma_P : \forall b.\ K_1 * \to H (\lambda a. P *) b
+% \end{displaymath}
+% which ``obviously'' isn't possible in general, since we have no way of
+% generating the $P *$ values to put into the holes. Another candidate
+% for the terminal object is $(\id : 0 \to 0, \lambda P. K_0)$, but this
+% is not truth preserving.
+
+% \paragraph{Initial Objects} The candidate initial object is $(\id_0 :
+% 0 \to 0, \lambda P. ?_\Set)$ where $?_\Set : 0 \to \Set$ is the unique
+% family of no sets. For the arrow to any other inductor, the underlying
+% functions are just the unique arrows in both cases. For option (1)
+% direction, the natural transformation $\sigma$ has type (for $P : A
+% \to \Set$):
+% \begin{displaymath}
+%   \sigma_P : \forall b \in 0.\ 0 \to H P (?_B b)
+% \end{displaymath}
+% which is evidently inhabited by the unique function from $0$. The case
+% in the opposite direction is similar.
+
+% \section{Things to do}
+
+% \begin{enumerate}
+% \item Spell out the following constructions on each kind of inductor:
+%   \begin{enumerate}
+%   \item Lexicographic induction
+%   \item Pair induction
+%   \item Comonadic induction (including complete induction)
+%   \item Adding elements at the ``top'' and ``bottom'' of each order
+%   \end{enumerate}
+%   I've implemented most of these for the first definition in my little
+%   type theory implementation, but not proved that they satisfy any of
+%   the conditions.
+% \item Investigate the categories of inductors for both definitions. Do
+%   they have products, sums, limits, colimits? What is the relationship
+%   between the two categories? What is the relationship to the category
+%   of sets + well-founded-orderings (an adjunction? does this
+%   adjunction give complete induction for inductors?).
+% \item Generalise to other fibrations. For most of the constructions,
+%   this will require a proper treatment of stability under
+%   parameterisation, as in the Hermida and Jacobs induction paper.
+% \end{enumerate}
+
+\end{document}
