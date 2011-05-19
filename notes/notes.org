@@ -1,0 +1,2 @@
+http://www.reddit.com/r/programming/comments/6q274/recursion_schemes_a_field_guide_ever_wonder_what/
+http://www.lfcs.inf.ed.ac.uk/reports/87/ECS-LFCS-87-25/ -- Inductively Defined Functions in Functional Programming Languages

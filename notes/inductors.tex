@@ -1,4 +1,4 @@
-\documentclass{article}
+\documentclass{amsart}
 
 \title{Inductors}
 \author{Robert Atkey}
@@ -15,7 +15,7 @@
             pdfauthor={Robert Atkey}}
 
 \usepackage{stmaryrd}
-%\usepackage{mathpartir}
+\usepackage{mathpartir}
 \usepackage{amssymb}
 \usepackage{amsthm}
 \usepackage[all]{xy}
@@ -175,10 +175,7 @@ but we can not in general prove that $k (k^{-1} a) = a$. The function
 $f^{-1}$ effectively deconstructs an $A$ value into its $B$
 sub-structure.
 
-\section{Constructions}
-
-This section covers some constructions of inductors, going some way to
-developing a language of inductors.
+\section{Basic Inductors}
 
 \subsection{Inductors from Inductive Types}
 
@@ -209,7 +206,7 @@ trivial predicate $H_1Pb = 1$. The resulting $\mathsf{CA}(\ind) : (A
   \begin{displaymath}
     \mathsf{CA}(\ind)\ P\ h\ a = \ind\ P\ (\lambda b\ \phi.\ h\ b\ *)\ a
   \end{displaymath}
-  where we just ignore the $H P b$ argument that is passed in.
+  where we just ignore the $H\ P\ b$ argument that is passed in.
 \end{enumerate}
 It is easy to see that these definitions support
 \autoref{eq:ind-compute}.
@@ -223,6 +220,8 @@ combinator gives us the induction function:
 So a user of this principle does not get access to $P\ n$ for numbers
 below the current one, they only learn whether the supplied natural
 number was zero or successor of another natural number.
+
+\section{Combination of Inductors}
 
 \subsection{Lexicographic Pairing}
 
@@ -260,6 +259,17 @@ The truth part of the lexicographic inductor is defined as:
 \begin{displaymath}
   \mathsf{Lex}(\truth_1, \truth_2)\ (b_1, b_2) = (H_1(\lambda a_1\ a_2. *)(\truth_1\ b_1) , \truth_2\ b_2)
 \end{displaymath}
+Thus the derived $\mathsf{all}$ function is given by the following
+definition in terms of the $\mathsf{all}$ combinators for the two
+component inductors:
+\begin{displaymath}
+  \mathsf{Lex}(\all)\ P\ (b_1,b_2)\ p = (
+  \begin{array}[t]{l}
+    \all_1\ (\lambda a_1.\ \Pi a_2.\ P(a_1,a_2))\ b_1\ (\lambda a_1 a_2. p\ (a_1,a_2)), \\
+    \all_2\ (\lambda a_2. P (k_1 b_1,a_2))\ b_2\ (\lambda a_2. p\ (k_1b_1,a_2)))
+  \end{array}
+\end{displaymath}
+
 The induction part is defined in terms of the induction parts of the
 component inductors, nesting one inside the other:
 \begin{displaymath}
@@ -280,9 +290,9 @@ component inductors, nesting one inside the other:
   \end{array}
 \end{displaymath}
 
-Checking that this satisfies \autoref{eq:ind-compute} goes as
-follows. I have shortened $\mathsf{Lex}(\ind_1, \ind_2)$ to just
-$\mathsf{lex}$:
+Checking that this satisfies \autoref{eq:ind-compute} goes as follows,
+starting from the left-hand side of the equation. I have shortened
+$\mathsf{Lex}(\ind_1, \ind_2)$ to just $\mathsf{lex}$:
 \begin{eqnarray*}
   & & \mathsf{lex}\ P\ h\ (k_1b_1,k_2b_2)
   \\
@@ -290,12 +300,7 @@ $\mathsf{lex}$:
   \ind_1
   \begin{array}[t]{l}
     (\lambda a_1.\ \Pi a_2 : A_2.\ P(a_1,a_2)) \\
-    (\lambda b_1\ \phi_1\ a_2.\ \ind_2
-    \begin{array}[t]{l}
-      (\lambda a_2.\ P(k_1 b_1, a_2)) \\
-      (\lambda b_2\ \phi_2.\ h\ (b_1, b_2)\ (\phi_1, \phi_2)) \\
-      a_2)
-    \end{array} \\
+    (\lambda b_1\ \phi_1\ a_2.\ \ind_2\ (\lambda a_2.\ P(k_1 b_1, a_2))\ (\lambda b_2\ \phi_2.\ h\ (b_1, b_2)\ (\phi_1, \phi_2))\ a_2) \\
     (k_1 b_1)\ (k_2 b_2)
   \end{array}
   \\
@@ -321,45 +326,39 @@ where
   (\lambda a_1.\ \Pi a_2.\ P(a_1,a_2))\ b_1\ (\lambda a_1 a_2.\
   \mathsf{lex}\ P\ h\ (a_1,a_2)), \phi_2)).
 \end{displaymath}
-We need to check this against the derived definition of
-$\mathsf{Lex}(\all)$, which is:
-\begin{displaymath}
-  \mathsf{Lex}(\all)\ P\ (b_1,b_2)\ p = (
-  \begin{array}[t]{l}
-    \all_1\ (\lambda a_1.\ \Pi a_2.\ P(a_1,a_2))\ b_1\ (\lambda a_1 a_2. p\ (a_1,a_2)), \\
-    \all_2\ (\lambda a_2. P (k_1 b_1,b_2))\ b_2\ (\lambda a_2. p\ (k_1b_1,a_2)))
-  \end{array}
-\end{displaymath}
-Applying this when $p = \mathsf{lex}\ P\ h$ gives:
+
+Starting from the right-hand side of \autoref{eq:ind-compute}, we
+have:
 \begin{eqnarray*}
-  & & (
+  & & h\ (b_1,b_2)\ (\mathsf{all}\ P\ (\mathsf{lex}\ P\ h) \\
+  &=& h\ (b_1,b_2)\ (
+  \begin{array}[t]{l}
+    \mathsf{all}_1\ (\lambda a_1.\ \Pi a_2.\ P(a_1,a_2)\ b_1\ (\lambda a_1 a_2.\ \mathsf{lex}\ P\ h\ (a_1,a_2))), \\
+    \mathsf{all}_2\ (\lambda a_2.\ P(k_1b_1, a_2))\ b_2\ (\lambda a_2.\ \mathsf{lex}\ P\ h\ (k_1 a_1, a_2)))
+  \end{array} \\
+  &=& h\ (b_1,b_2)\ (
   \begin{array}[t]{l}
     \all_1\ (\lambda a_1.\ \Pi a_2.\ P(a_1,a_2))\ b_1\ (\lambda a_1 a_2.\ \mathsf{lex}\ P\ h\ (a_1,a_2)), \\
-    \all_2\ (\lambda a_2. P (k_1 b_1,b_2))\ b_2\ (\lambda a_2.\ \mathsf{lex}\ P\ h\ (k_1b_1,a_2)))
-  \end{array}
-  \\
-  &=& (
-  \begin{array}[t]{l}
-    \all_1\ (\lambda a_1.\ \Pi a_2.\ P(a_1,a_2))\ b_1\ (\lambda a_1 a_2.\ \mathsf{lex}\ P\ h\ (a_1,a_2)), \\
-    \all_2\ (\lambda a_2. P (k_1 b_1,b_2))\ b_2\ (\lambda a_2.\ (\lambda a_2. P(k_1 b_1, a_2))\ h^\dagger))
+    \all_2\ (\lambda a_2. P (k_1 b_1,b_2))\ b_2\ (\lambda a_2.\ \mathsf{ind_2}\ (\lambda a_2. P(k_1 b_1, a_2))\ h^\dagger))
   \end{array}
 \end{eqnarray*}
-so the lexicographic inductor satisfies \autoref{eq:ind-compute}.
+as required.
 
-\paragraph{A Question}\todo{Multiple computational rules?} 
-This proof shows that the lexicographic inductor actually satisfies
-more than the computation rule from \autoref{eq:ind-compute}. We only
-need to supply it with $(k_1b_1,a_2)$ for it to be able to do some
-computation. It may be the case that the $h$ that is supplied may be
-able to do useful work without touching the second component of the
-pair. I'm not sure whether it is a good idea to extend the definition
-of inductor to include the possibility of multiple computational rules
-that the induction function may support. Presumably, some way would be
-needed of ensuring that they are coherent.
+\bigskip
 
-\paragraph{Another Question} Is the construction of lexicographic
-inductors associative? What would it mean for two inductors to be
-equal?
+\todo{Multiple computational rules?}  This proof shows that the
+lexicographic inductor actually satisfies more than the computation
+rule from \autoref{eq:ind-compute}. We only need to supply it with
+$(k_1b_1,a_2)$ for it to be able to do some computation. It may be the
+case that the $h$ that is supplied may be able to do useful work
+without touching the second component of the pair. I'm not sure
+whether it is a good idea to extend the definition of inductor to
+include the possibility of multiple computational rules that the
+induction function may support. Presumably, some way would be needed
+of ensuring that they are coherent.
+
+Is the construction of lexicographic inductors associative? What would
+it mean for two inductors to be equal?
 
 \subsection{Pair Inductors}
 
@@ -540,16 +539,15 @@ product?
 
 \subsection{Stacking Inductors}
 
+\newcommand{\inl}{\mathsf{inl}}
+\newcommand{\inr}{\mathsf{inr}}
+
 Given a pair of inductors $\ind_1 : (B_1 \stackrel{k_1}\to A_1, H_1)$
 and $\ind_2 : (B_2 \stackrel{k_2}\to A_2, H_2)$, we can form their
 stacked inductor $\mathsf{Stack}(\ind_1, \ind_2) : (B_1 + B_2
 \stackrel{k_1 + k_2}\longrightarrow A_1 + A_2, H_{\mathsf{Stack}})$,
 where $H_{\mathsf{Stack}}$ is defined as (where $P : A_1 + A_2 \to
 \Set$):
-
-\newcommand{\inl}{\mathsf{inl}}
-\newcommand{\inr}{\mathsf{inr}}
-
 \begin{eqnarray*}
   H_{\mathsf{Stack}}\ P\ (\inl\ b_1) &=& H_1(\lambda a_1. P (\inl\ a_1))b_1 \times (a_2 : A_2) \to P(\inr\ a_2)\\
   H_{\mathsf{Stack}}\ P\ (\inr\ b_2) &=& H_2(\lambda a_2. P (\inr\ a_2))b_2
@@ -584,28 +582,139 @@ also includes a use of the second component's inductor.
 
 \todo{Stacked inductors proof}
 
-\subsection{Comonadic Inductors}
+\section{Induction in Context}
 
-\todo{Comonadic section}
+\subsection{Background: Comonadic Recursion Schemes}
+
+FIXME: Background on comonadic recursion schemes. Note that we can get
+away with a lot less.
+
+\subsection{Inductors in Context}
+
+Assume that we have an inductor $\ind : (B \stackrel{k}\to A, H)$. The
+required data consists of
 \begin{itemize}
-\item Introduce comonadic recursion schemes, as done by Vene, Uustalu
-  and Pardo
-\item Spell out what a $B$-indexed comonad is
-\item Describe distributive laws for $B$-indexed comonads
-\item Describe how to make the full comonadic structural induction
-  principle. Does this require extra structure on the inductors?
+\item a functor $W : \Set^A \to \Set^A$;
+\item a counit $\epsilon_P : WP \to P$;
+\item a mapping $\cdot^\dagger : (H(WP) \to k^*P) \to (H(WP) \to k^*(WP))$; and
+\item a truth function $\tau : K_1A \to W(K_1A)$,
+\end{itemize}
+such that, for any $f : H(WP) \to k^*P$,\todo{Would the second one
+  follow from some uniqueness property?}
+\begin{eqnarray}
+  k^*\epsilon \circ f^\dagger & = & f \\
+  W(\epsilon \circ \ind(f^\dagger)) \circ \tau &=& \ind(f^\dagger).
+\end{eqnarray}
+
+Using this, we can define a derived inductor $\ind^W : (B
+\stackrel{k}\to A, H^W)$ for $W$-induction over $A$, with $B
+\stackrel{k}\to A$ as before, and
+\begin{itemize}
+\item $H^WP = H(WP)$;
+\item $\ind^W_P(f) = \epsilon_P \circ \ind_{WP}(f^\dagger)$; and
+\item $\truth^W = H\tau \circ \truth_H$
 \end{itemize}
 
-\subsection{Complete Induction}
 
-The leading (only) example of the use of comonadic inductors. Are
-there any others?
+% \subsection{Comonadic Structural Induction}
 
-\subsection{Note on the Inverse Image Construction}
+% For a set $A$, an $A$-indexed comonad is just a comonad on the
+% category $\Set^A$. This consists of:
+% \begin{itemize}
+% \item a functor $W : \Set^A \to \Set^A$;
+% \item a counit $\epsilon_P : WP \to P$, natural in $P$; and
+% \item a cojoin $\delta_P : WP \to W(WP)$, natural in $P$,
+% \end{itemize}
+% such that the following diagrams commute:
+% \begin{mathpar}
+%   \xymatrix{
+%     {WP} \ar[r]^{\delta_P} \ar[d]_{\delta_P} \ar[rd]^{\id}
+%     &
+%     {W(WP)} \ar[d]^{\epsilon_{WP}}
+%     \\
+%     {W(WP)} \ar[r]^{W\epsilon_P}
+%     &
+%     {WP}
+%   }
+
+%   \xymatrix{
+%     {WP} \ar[r]^{\delta_P} \ar[d]_{\delta_P}
+%     &
+%     {W(WP)} \ar[d]^{W\delta_P}
+%     \\
+%     {W(WP)}  \ar[r]^(.45){\delta_{WP}}
+%     &
+%     {W(W(WP))}
+%   }
+% \end{mathpar}
+
+% Given an inductor $\ind : (B \stackrel{k}\to A, H)$ and a comonad $(W,
+% \epsilon, \delta)$ on $\Set^A$, we need two extra pieces of structure
+% to construct the comonadic inductor:
+% \begin{itemize}
+% \item A natural transformation: $\kappa : H(WP) \to k^*(W(k^{-1*}(HP)))$; and
+% \item A truth function: $\truth^W : K_1A \to W(K_1A)$,
+% \end{itemize}
+% such that the following diagrams commute:
+% \begin{mathpar}
+%   \xymatrix{
+%     {H(WP)} \ar[r]^(.38){\kappa_P} \ar[d]_{H\epsilon}
+%     &
+%     {k^*(W(k^{-1*}(HP)))} \ar[d]^{k^*\epsilon_{k^{-1*}(HP)}}
+%     \\
+%     {HP}
+%     &
+%     {k^*(k^{-1*}(HP))} \ar[l]^(.6){\cong}
+%   }
+
+%   \xymatrix{
+%     {K_1 A} \ar[r]^(.45){\truth^W} \ar[d]_f
+%     &
+%     {W(K_1A)} \ar[d]^{Wf}
+%     \\
+%     {WP} \ar[r]^(.45){\delta_P}
+%     &
+%     {W(WP)}
+%   }
+% \end{mathpar}
+% In the first diagram, the arrow along the bottom is an equality
+% induced from the right inverse property of the deconstructor $k^{-1}$
+% derived from the inductor $\ind : (B \stackrel{k}\to A, H)$.  The
+% second diagram should commute for any $P : \Set^A$ and $f : K_1A \to
+% WP$.
+
+% We can now build the comonadic inductor with the following data:
+% \begin{itemize}
+% \item 
+% \end{itemize}
+
+% \todo{Comonadic section}
+% \begin{itemize}
+% \item Introduce comonadic recursion schemes, as done by Vene, Uustalu
+%   and Pardo
+% \item Spell out what an $A$-indexed comonad is
+% \item Describe distributive laws for $A$-indexed comonads over $A$ to
+%   $B$ predicate transformers
+% \item Describe how to make the full comonadic structural induction
+%   principle. Does this require extra structure on the inductors?
+% \end{itemize}
+
+\subsubsection{Zygoinduction}
+
+\subsubsection{Complete induction I: Memoisation}
+
+\subsubsection{Complete Induction II: Relational}
+
+\section{Note on the Inverse Image Construction}
 
 Point out that you can get the effect of the inverse image
 construction of well-founded relations by doing structural induction
 on indexes of data, where those indexes may be derived by refinement.
+
+\section{Example}
+
+Some examples of what you get when applying some constructions
+repeatedly. When does the order matter?
 
 \section{Morphisms of Inductors}
 
@@ -618,7 +727,7 @@ Discuss the extra structure that seems to be required.
 
 \subsection{Initial and Terminal Objects}
 
-Don't seem to have terminal objects
+Don't seem to have terminal objects. Maybe $\mu F$ where $FX = 1$?
 
 % \section{A Fibration}
 
